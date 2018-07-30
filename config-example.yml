@@ -1,0 +1,9 @@
+---
+es_https: false
+es_host: localhost
+es_port: 9200
+
+am_host: localhost
+am_port: 9094
+
+interval: 1m
