@@ -1,9 +1,11 @@
 ---
-es_https: false
-es_host: localhost
-es_port: 9200
+elasticsearch: 
+  url: http://localhost:9200
+  index_name: alertmanager
+  type_name: alerts
+alertmanager:
+  url: http://localhost:9094
+  alerts_api: /api/v1/alerts?silenced=false&inhibited=false
 
-am_host: localhost
-am_port: 9094
-
+listenAddr: "localhost:7986"
 interval: 1m
