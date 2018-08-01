@@ -10,8 +10,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var globalConfig *Config
-
 // Config hold all config items in one struct
 type Config struct {
 	//EleasticSearch define the connection url for elasticsearch
@@ -46,11 +44,6 @@ func NewConfig(file string) (*Config, error) {
 	}
 	log.Println("Load config file success")
 	return config, nil
-}
-
-// GetGlobalConfig get global config object
-func GetGlobalConfig() *Config {
-	return globalConfig
 }
 
 func (c *Config) readConfigFile(file string) error {

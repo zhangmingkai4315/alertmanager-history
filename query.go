@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/olivere/elastic"
 
@@ -13,9 +14,13 @@ import (
 
 // SearchRequest define user posted json message
 type SearchRequest struct {
-	Term string `json:"term"`
-	Skip int    `json:"skip"`
-	Take int    `json:"take"`
+	Term        string    `json:"term"`        // Default value is ""
+	Skip        int       `json:"skip"`        // Default value is 0
+	Size        int       `json:"size"`        // Default value is 20
+	StartsAt    time.Time `json:"startsAt"`    // Default value is one week ago
+	EndsAt      time.Time `json:"endsAt"`      // Default value is now
+	SortBy      string    `json:"sortBy"`      // Default value is startsAt
+	SortReverse bool      `json:"sortReverse"` // Default value is true
 }
 
 // SearchResponse define server reply json message
@@ -44,8 +49,13 @@ func jsonQueryResponse(w http.ResponseWriter, data interface{}, errMsg string, s
 func searchHandlerWithConfig(config *Config) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		searchRequest := SearchRequest{
-			Take: 20,
-			Skip: 0,
+			Size:        20,
+			Skip:        0,
+			Term:        "",
+			StartsAt:    time.Now().AddDate(0, 0, -7),
+			EndsAt:      time.Now(),
+			SortBy:      "startsAt",
+			SortReverse: true,
 		}
 		if r.Body == nil {
 			jsonQueryResponse(w, nil, "Post data not valid", http.StatusBadRequest)
@@ -72,11 +82,40 @@ func searchFromElasticSearch(search *SearchRequest, config *Config) (results []t
 		err = errors.New("ElasticSearch connection client not ready")
 		return
 	}
-	multiQuery := elastic.NewMultiMatchQuery(search.Term, "labels.alertname", "labels.instance", "labels.job", "annotations.description", "annotations.summary")
+	beforeTimeRange := elastic.NewRangeQuery("endsAt").Lte(search.StartsAt)
+	afterTimeRange := elastic.NewRangeQuery("startsAt").Gte(search.EndsAt)
 
-	searchResults, err := config.ESClient.Search().Index(config.EleasticSearch.IndexName).Query(multiQuery).From(search.Skip).Size(search.Take).Do(context.Background())
-	if err != nil {
-		return
+	queryBuilder := elastic.NewBoolQuery()
+	var matcher elastic.Query
+	if search.Term != "" {
+		matcher = elastic.NewMultiMatchQuery(search.Term, "labels.alertname", "labels.instance", "labels.job", "annotations.description", "annotations.summary")
+		queryBuilder = queryBuilder.Must(matcher)
+	}
+
+	queryBuilder.MustNot(beforeTimeRange)
+	queryBuilder.MustNot(afterTimeRange)
+
+	searchResults, reterr := config.ESClient.
+		Search().
+		Index(config.EleasticSearch.IndexName).
+		Query(queryBuilder).
+		Sort(search.SortBy, search.SortReverse).
+		From(search.Skip).
+		Size(search.Size).
+		Pretty(true).
+		Do(context.Background())
+	if reterr != nil {
+		switch {
+		case elastic.IsNotFound(reterr):
+			err = errors.New("Resouce Not Found")
+		case elastic.IsTimeout(reterr):
+			err = errors.New("Search Time out")
+		case elastic.IsConnErr(reterr):
+			err = errors.New("Connect elasticsearch error")
+			return
+		default:
+			err = reterr
+		}
 	}
 	for _, hit := range searchResults.Hits.Hits {
 		var alert types.Alert
@@ -86,6 +125,5 @@ func searchFromElasticSearch(search *SearchRequest, config *Config) (results []t
 		}
 		results = append(results, alert)
 	}
-
 	return
 }
