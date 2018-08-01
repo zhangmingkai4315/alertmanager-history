@@ -12,13 +12,15 @@ import (
 
 // Config hold all config items in one struct
 type Config struct {
-	//EleasticSearch define the connection url for elasticsearch
+	//EleasticSearch define the connection url and index, type infomation for elasticsearch
 	EleasticSearch struct {
 		URL       string `yaml:"url"`
 		IndexName string `yaml:"index_name"`
 		TypeName  string `yaml:"type_name"`
 	} `yaml:"elasticsearch"`
+
 	ESClient *elastic.Client
+
 	//AlertManager define the connection url for alertmanager
 	AlertManager struct {
 		URL       string `yaml:"url"`

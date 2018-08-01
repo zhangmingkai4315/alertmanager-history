@@ -29,7 +29,7 @@ func StartAlertsTransferCron(config *Config) {
 			return
 		}
 		config.fetchAlertsTimesTotal.Inc()
-
+		// appendAlerts will save current alerts to
 		err = appendAlerts(config, alerts)
 		if err != nil {
 			config.bulkInsertErrorsTotal.Inc()

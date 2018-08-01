@@ -21,6 +21,7 @@ type SearchRequest struct {
 	EndsAt      time.Time `json:"endsAt"`      // Default value is now
 	SortBy      string    `json:"sortBy"`      // Default value is startsAt
 	SortReverse bool      `json:"sortReverse"` // Default value is true
+	Current     bool      `json:"current"`     // Default value is false
 }
 
 // SearchResponse define server reply json message
@@ -82,20 +83,26 @@ func searchFromElasticSearch(search *SearchRequest, config *Config) (results []t
 		err = errors.New("ElasticSearch connection client not ready")
 		return
 	}
-	beforeTimeRange := elastic.NewRangeQuery("endsAt").Lte(search.StartsAt)
-	afterTimeRange := elastic.NewRangeQuery("startsAt").Gte(search.EndsAt)
 
 	queryBuilder := elastic.NewBoolQuery()
+
+	if search.Current == false {
+		endsTimeRange := elastic.NewRangeQuery("endsAt").Lte(search.StartsAt)
+		startsTimeRange := elastic.NewRangeQuery("startsAt").Gte(search.EndsAt)
+		queryBuilder.MustNot(endsTimeRange)
+		queryBuilder.MustNot(startsTimeRange)
+	} else {
+		endsTimeRange := elastic.NewRangeQuery("endsAt").Gte(time.Now().Add(time.Minute * -2))
+		queryBuilder.Must(endsTimeRange)
+	}
+
 	var matcher elastic.Query
 	if search.Term != "" {
 		matcher = elastic.NewMultiMatchQuery(search.Term, "labels.alertname", "labels.instance", "labels.job", "annotations.description", "annotations.summary")
 		queryBuilder = queryBuilder.Must(matcher)
 	}
 
-	queryBuilder.MustNot(beforeTimeRange)
-	queryBuilder.MustNot(afterTimeRange)
-
-	searchResults, reterr := config.ESClient.
+	searchResults, searchError := config.ESClient.
 		Search().
 		Index(config.EleasticSearch.IndexName).
 		Query(queryBuilder).
@@ -104,17 +111,17 @@ func searchFromElasticSearch(search *SearchRequest, config *Config) (results []t
 		Size(search.Size).
 		Pretty(true).
 		Do(context.Background())
-	if reterr != nil {
+	if searchError != nil {
 		switch {
-		case elastic.IsNotFound(reterr):
+		case elastic.IsNotFound(searchError):
 			err = errors.New("Resouce Not Found")
-		case elastic.IsTimeout(reterr):
+		case elastic.IsTimeout(searchError):
 			err = errors.New("Search Time out")
-		case elastic.IsConnErr(reterr):
+		case elastic.IsConnErr(searchError):
 			err = errors.New("Connect elasticsearch error")
 			return
 		default:
-			err = reterr
+			err = searchError
 		}
 	}
 	for _, hit := range searchResults.Hits.Hits {
