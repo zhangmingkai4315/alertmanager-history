@@ -74,7 +74,6 @@ func appendAlerts(config *Config, alerts []types.Alert) error {
 		return nil
 	}
 	bulk := config.ESClient.Bulk().Index(config.EleasticSearch.IndexName).Type(config.EleasticSearch.TypeName)
-
 	for _, alert := range alerts {
 		bulk.Add(elastic.NewBulkIndexRequest().Id(strconv.FormatUint(uint64(alert.Fingerprint()), 10)).Doc(alert))
 	}

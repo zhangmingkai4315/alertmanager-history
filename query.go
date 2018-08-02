@@ -49,6 +49,10 @@ func jsonQueryResponse(w http.ResponseWriter, data interface{}, errMsg string, s
 
 func searchHandlerWithConfig(config *Config) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			jsonQueryResponse(w, nil, "Post method only", http.StatusMethodNotAllowed)
+			return
+		}
 		searchRequest := SearchRequest{
 			Size:        20,
 			Skip:        0,
@@ -74,7 +78,6 @@ func searchHandlerWithConfig(config *Config) func(w http.ResponseWriter, r *http
 			return
 		}
 		jsonQueryResponse(w, results, "", http.StatusOK)
-
 	}
 }
 
