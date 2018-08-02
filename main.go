@@ -3,14 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"runtime"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/cors"
 )
 
 var (
@@ -73,15 +72,14 @@ func main() {
 	config.bulkInsertsTimesTotal = bulkInsertTimesTotal
 	go StartAlertsTransferCron(config)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		fmt.Fprint(w, versionInfo)
 	})
-	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc("/search", searchHandlerWithConfig(config))
-	serve := &http.Server{
-		Addr:         config.ListenAddr,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-	log.Fatal(serve.ListenAndServe())
+	mux.Handle("/metrics", promhttp.Handler())
+	mux.HandleFunc("/search", searchHandlerWithConfig(config))
+
+	handler := cors.Default().Handler(mux)
+	http.ListenAndServe(config.ListenAddr, handler)
 }

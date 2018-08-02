@@ -49,6 +49,7 @@ func jsonQueryResponse(w http.ResponseWriter, data interface{}, errMsg string, s
 
 func searchHandlerWithConfig(config *Config) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		if r.Method == "GET" {
 			jsonQueryResponse(w, nil, "Post method only", http.StatusMethodNotAllowed)
 			return
