@@ -55,13 +55,11 @@ func searchHandlerWithConfig(config *Config) func(w http.ResponseWriter, r *http
 			return
 		}
 		searchRequest := SearchRequest{
-			Size:        20,
-			Skip:        0,
-			Term:        "",
-			StartsAt:    time.Now().AddDate(0, 0, -7),
-			EndsAt:      time.Now(),
-			SortBy:      "startsAt",
-			SortReverse: true,
+			Size:     20,
+			Skip:     0,
+			Term:     "",
+			StartsAt: time.Now().AddDate(0, 0, -7),
+			EndsAt:   time.Now(),
 		}
 		if r.Body == nil {
 			jsonQueryResponse(w, nil, "Post data not valid", http.StatusBadRequest)
@@ -110,7 +108,7 @@ func searchFromElasticSearch(search *SearchRequest, config *Config) (results []t
 		Search().
 		Index(config.EleasticSearch.IndexName).
 		Query(queryBuilder).
-		Sort(search.SortBy, search.SortReverse).
+		// Sort(search.SortBy, search.SortReverse).
 		From(search.Skip).
 		Size(search.Size).
 		Pretty(true).
