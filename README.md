@@ -1,20 +1,19 @@
 # alertmanager-history
-Build a alertmanager history server for search and analysis, all alerts will save to elasticsearch
+Build a alertmanager history server for search and analysis, all alerts will save to elasticsearch and ready for search
 
 
 #### Start Server 
 
 
-Rename config-example.yml -> config.yml , change the configration parms
-
-Make sure the sevices is ready 
+Frist rename config-example.yml -> config.yml , change the configration parms, then make sure your sevices is ready: 
 
  - alertmanager 
  - elasticsearch
 
+Build yourself, or download from release page and start history server:
 
-Start History Server
 ```
   go build . && ./alertmanager-history -c config.yml
 ```
+
 
