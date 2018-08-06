@@ -16,7 +16,7 @@ var (
 	configfile             string
 	showVersion            bool
 	app                    = "alertmanager_history"
-	version                = "v0.1.0"
+	version                = "v0.2.0"
 	versionInfo            = fmt.Sprintf("%s %s (%s)", app, version, runtime.Version())
 	fetchAlertsErrorsTotal = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: app,
