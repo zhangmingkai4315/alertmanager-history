@@ -4,7 +4,7 @@ elasticsearch:
   index_name: alertmanager
   type_name: alerts
 alertmanager:
-  url: http://localhost:9094
+  url: http://localhost:9093
   alerts_api: /api/v1/alerts?silenced=false&inhibited=false
 
 listenAddr: "localhost:7986"

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/olivere/elastic"
@@ -21,6 +22,12 @@ func NewESClient(config *Config) (*elastic.Client, error) {
 		return nil, err
 	}
 	config.ESClient = client
-	log.Printf("Connect ElastiSearch [%s] Success", config.EleasticSearch.URL)
+	info, code, err := client.Ping(config.EleasticSearch.URL).Do(context.Background())
+
+	if err != nil {
+		// Handle error
+		return nil, err
+	}
+	log.Printf("Connect ElastiSearch [%s] Success [code=%d,info=%+v]", config.EleasticSearch.URL, code, info)
 	return client, nil
 }

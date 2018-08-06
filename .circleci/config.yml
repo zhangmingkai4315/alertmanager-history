@@ -17,9 +17,14 @@ jobs:
           name: create tar.gz files for each build
           command: |
             mkdir dist
-            for f in ./tmp/*;do
-              filename=`basename "$f"`
-              tar czvf dist/$filename.tar.gz $f config-example.yml
+            VERSION=`cat VERSION`
+            for fullfilename in ./tmp/*;do
+              filename=$(basename "$fullfilename")
+              fname="${filename%.*}"
+              mkdir dist/${fname}_$VERSION
+              cp $fullfilename config-example.yml dist/${fname}_$VERSION
+              tar czvf ${fname}_$VERSION.tar.gz -C dist ${fname}_$VERSION
+              mv ${fname}_$VERSION.tar.gz dist
+              rm -rf dist/${fname}_$VERSION
             done
-
       - run: ghr -t $GITHUB_TOKEN `cat VERSION` dist/
