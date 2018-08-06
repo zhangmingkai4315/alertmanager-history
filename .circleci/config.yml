@@ -21,5 +21,5 @@ jobs:
               filename=`basename "$f"`
               tar czvf dist/$filename.tar.gz $f config-example.yml
             done
-            
-      - run: ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r CIRCLE_PROJECT_REPONAME --replace `git describe --tags` dist/
+
+      - run: ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r CIRCLE_PROJECT_REPONAME `cat VERSION` dist/*.tar.gz
