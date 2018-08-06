@@ -4,14 +4,22 @@
 version: 2
 jobs:
   build:
+    working_directory: /go/src/github.com/zhangmingkai4315/alertmanager-history
     docker:
       # specify the version
       - image: circleci/golang:1.9
-      working_directory: /go/src/github.com/zhangmingkai4315/alertmanager-history
     steps:
       - checkout
       - run: go get github.com/mitchellh/gox
       - run: go get github.com/tcnksm/ghr
       - run: gox -output "tmp/alertmanager-history_{{.OS}}_{{.Arch}}"
-      - run: sh save_artifact.sh
+      - run: 
+          name: create tar.gz files for each build
+          command: |
+            mkdir dist
+            for f in ./tmp/*;do
+              filename=`basename "$f"`
+              tar czvf dist/$filename.tar.gz $f config-example.yml
+            done
+            
       - run: ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r CIRCLE_PROJECT_REPONAME --replace `git describe --tags` dist/
